@@ -1,0 +1,1600 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>离线知识库 - 慧眼柑橘助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(180deg, #4CAF50 0%, #81C784 50%, #AED581 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* 状态栏 */
+        .status-bar {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            font-size: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .status-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .offline-badge {
+            background: rgba(255, 255, 255, 0.3);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* 头部 */
+        .header {
+            padding: 20px 20px 15px;
+            text-align: center;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .logo {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 24px;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        /* 搜索框 */
+        .search-container {
+            padding: 0 20px 15px;
+        }
+
+        .search-box {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .search-box input {
+            border: none;
+            outline: none;
+            background: transparent;
+            flex: 1;
+            font-size: 15px;
+            color: #333;
+        }
+
+        .search-box input::placeholder {
+            color: #999;
+        }
+
+        /* 知识库列表 */
+        .knowledge-list {
+            padding: 10px 20px 20px;
+            max-height: calc(100vh - 300px);
+            overflow-y: auto;
+        }
+
+        .knowledge-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 18px 20px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .knowledge-card:active {
+            transform: scale(0.98);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .card-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+        }
+
+        .card-icon {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, #66BB6A, #81C784);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .card-content h3 {
+            color: #2E7D32;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .card-content p {
+            color: #666;
+            font-size: 13px;
+        }
+
+        .card-arrow {
+            width: 30px;
+            height: 30px;
+            background: #4CAF50;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+
+        /* 底部统计 */
+        .stats-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+
+        .stats-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 22px;
+            font-weight: 700;
+            color: #4CAF50;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 3px;
+        }
+
+        /* 详情页面 */
+        .detail-page {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(180deg, #4CAF50 0%, #81C784 50%, #AED581 100%);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .detail-page.active {
+            transform: translateX(0);
+        }
+
+        .detail-header {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: white;
+        }
+
+        .back-btn {
+            width: 35px;
+            height: 35px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .detail-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .detail-content {
+            padding: 20px;
+        }
+
+        .detail-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .detail-card h3 {
+            color: #2E7D32;
+            font-size: 18px;
+            margin-bottom: 12px;
+            border-left: 4px solid #4CAF50;
+            padding-left: 12px;
+        }
+
+        .detail-card p {
+            color: #555;
+            font-size: 14px;
+            line-height: 1.8;
+            margin-bottom: 10px;
+        }
+
+        .detail-card ul {
+            margin-left: 20px;
+            color: #555;
+        }
+
+        .detail-card li {
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        /* 无结果提示 */
+        .no-result {
+            text-align: center;
+            padding: 40px 20px;
+            color: white;
+        }
+
+        .no-result-icon {
+            font-size: 50px;
+            margin-bottom: 15px;
+        }
+
+        .no-result-text {
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 主页面 -->
+    <div id="mainPage">
+        <!-- 状态栏 -->
+        <div class="status-bar">
+            <div class="status-left">
+                <span>10:14</span>
+                <span class="offline-badge">🚫 离线模式</span>
+            </div>
+            <div>🔋 100%</div>
+        </div>
+
+        <!-- 头部 -->
+        <div class="header">
+            <div class="logo-container">
+                <img src="logo1.png" alt="慧眼" class="logo">
+                <h1>离线知识库</h1>
+            </div>
+            <p>无网络也能查询病虫害防治方案</p>
+        </div>
+
+        <!-- 搜索框 -->
+        <div class="search-container">
+            <div class="search-box">
+                <span style="font-size: 20px;">🔍</span>
+                <input type="text" id="searchInput" placeholder="搜索病虫害名称...">
+            </div>
+        </div>
+
+        <!-- 知识库列表 -->
+        <div class="knowledge-list" id="knowledgeList">
+            <!-- 由JavaScript动态生成 -->
+        </div>
+
+        <!-- 底部统计 -->
+        <div class="stats-footer">
+            <div class="stats-container">
+                <div class="stat-item">
+                    <span class="stat-number">52</span>
+                    <div class="stat-label">病虫害方案</div>
+                </div>
+                <div style="width: 1px; height: 40px; background: #ddd;"></div>
+                <div class="stat-item">
+                    <span class="stat-number">25MB</span>
+                    <div class="stat-label">占用空间</div>
+                </div>
+                <div style="width: 1px; height: 40px; background: #ddd;"></div>
+                <div class="stat-item">
+                    <span class="stat-number">100%</span>
+                    <div class="stat-label">离线可用</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 详情页面 -->
+    <div class="detail-page" id="detailPage">
+        <div class="detail-header">
+            <div class="back-btn" onclick="closDetail()">‹</div>
+            <div class="detail-title" id="detailTitle">病害详情</div>
+        </div>
+        <div class="detail-content" id="detailContent">
+            <!-- 由JavaScript动态生成 -->
+        </div>
+    </div>
+
+    <script>
+        // 病虫害知识库数据
+        const knowledgeData = [
+            {
+                id: 1,
+                name: "柑橘黄龙病",
+                icon: "🍊",
+                category: "病害",
+                description: "柑橘最严重的病害",
+                symptoms: "叶片黄化、不均匀变黄、出现斑驳状，新梢变小，果实小而畸形，味酸。",
+                causes: "由革兰氏阴性细菌引起，通过木虱传播。",
+                prevention: [
+                    "种植无病苗木，严格检疫",
+                    "及时防治柑橘木虱",
+                    "发现病株立即清除并销毁",
+                    "定期巡查果园，早发现早处理"
+                ],
+                treatment: [
+                    "目前无有效治疗方法",
+                    "重点在于预防和控制传播",
+                    "病树必须挖除并烧毁",
+                    "加强木虱防治工作"
+                ]
+            },
+            {
+                id: 2,
+                name: "柑橘潜叶蛾",
+                icon: "🦋",
+                category: "虫害",
+                description: "夏秋梢期主要害虫",
+                symptoms: "嫩叶出现银白色弯曲隧道，叶片卷曲，影响光合作用。",
+                causes: "潜叶蛾幼虫潜入叶片表皮下取食。",
+                prevention: [
+                    "抹除零星早发的夏秋梢",
+                    "统一放梢，集中防治",
+                    "成虫期使用灯光诱杀",
+                    "保护天敌如寄生蜂"
+                ],
+                treatment: [
+                    "在新梢萌发1-2cm时开始喷药",
+                    "推荐药剂：阿维菌素、氯氰菊酯",
+                    "间隔7-10天喷药一次",
+                    "连续喷药2-3次"
+                ]
+            },
+            {
+                id: 3,
+                name: "柑橘红蜘蛛",
+                icon: "🕷️",
+                category: "虫害",
+                description: "常年发生的主要害虫",
+                symptoms: "叶片失绿呈灰白色，严重时叶片脱落，果实表面粗糙。",
+                causes: "红蜘蛛刺吸叶片和果实汁液。",
+                prevention: [
+                    "保持果园湿度，干旱时适当灌溉",
+                    "保护天敌如捕食螨",
+                    "定期检查虫情，达标防治",
+                    "避免过度使用广谱杀虫剂"
+                ],
+                treatment: [
+                    "虫口密度达标时及时喷药",
+                    "推荐药剂：螺螨酯、乙螨唑",
+                    "轮换用药，避免抗药性",
+                    "全园喷雾，叶片正反面都要喷到"
+                ]
+            },
+            {
+                id: 4,
+                name: "柑橘炭疽病",
+                icon: "🍃",
+                category: "病害",
+                description: "常见真菌性病害",
+                symptoms: "叶片出现圆形或不规则褐色病斑，后期病斑中央灰白色，果实出现凹陷病斑。",
+                causes: "由炭疽菌引起，高温多雨季节易发病。",
+                prevention: [
+                    "加强栽培管理，增强树势",
+                    "雨季注意排水，降低湿度",
+                    "及时清除病叶病果",
+                    "春梢萌发前喷保护性杀菌剂"
+                ],
+                treatment: [
+                    "发病初期及时喷药防治",
+                    "推荐药剂：苯醚甲环唑、吡唑醚菌酯",
+                    "10-15天喷药一次",
+                    "连续防治2-3次"
+                ]
+            },
+            {
+                id: 5,
+                name: "柑橘溃疡病",
+                icon: "⚠️",
+                category: "病害",
+                description: "重要检疫性病害",
+                symptoms: "叶片、枝条、果实出现黄褐色木栓化隆起病斑，病斑中央凹陷。",
+                causes: "由细菌引起，通过风雨传播。",
+                prevention: [
+                    "种植抗病品种",
+                    "严格检疫，防止病害传入",
+                    "台风暴雨前后加强防治",
+                    "控制夏梢，减少感病组织"
+                ],
+                treatment: [
+                    "发现病害及时剪除病枝病叶",
+                    "推荐药剂：铜制剂、链霉素",
+                    "春梢、夏梢、秋梢期重点防治",
+                    "台风后立即喷药保护"
+                ]
+            },
+            {
+                id: 6,
+                name: "柑橘蚜虫",
+                icon: "🐛",
+                category: "虫害",
+                description: "春季主要害虫",
+                symptoms: "嫩叶卷曲，新梢生长受阻，分泌蜜露引起煤烟病。",
+                causes: "蚜虫刺吸嫩叶汁液。",
+                prevention: [
+                    "保护瓢虫等天敌",
+                    "春梢萌发期加强检查",
+                    "黄色粘虫板诱杀",
+                    "清除果园杂草"
+                ],
+                treatment: [
+                    "发现蚜虫及时喷药",
+                    "推荐药剂：吡虫啉、啶虫脒",
+                    "选择在晴天上午或傍晚喷药",
+                    "注意喷到嫩梢和叶背"
+                ]
+            },
+            {
+                id: 7,
+                name: "柑橘疮痂病",
+                icon: "🔴",
+                category: "病害",
+                description: "春季低温多雨易发",
+                symptoms: "叶片、果实出现黄褐色圆锥形瘤状突起。",
+                causes: "由真菌引起，春梢期侵染。",
+                prevention: [
+                    "种植抗病品种",
+                    "春季做好排水工作",
+                    "春芽萌动期开始喷药保护",
+                    "控制春梢生长过旺"
+                ],
+                treatment: [
+                    "春芽萌动至开花期重点防治",
+                    "推荐药剂：代森锰锌、丙森锌",
+                    "每隔7-10天喷药一次",
+                    "连续喷药3-4次"
+                ]
+            },
+            {
+                id: 8,
+                name: "柑橘木虱",
+                icon: "🪰",
+                category: "虫害",
+                description: "黄龙病传播媒介",
+                symptoms: "成虫、若虫刺吸嫩梢汁液，传播黄龙病。",
+                causes: "木虱繁殖快，是黄龙病主要传播途径。",
+                prevention: [
+                    "统一放梢，集中防治",
+                    "新梢期加强检查和防治",
+                    "黄板诱杀成虫",
+                    "清除病株减少菌源"
+                ],
+                treatment: [
+                    "新梢1-2cm时开始防治",
+                    "推荐药剂：吡虫啉、噻虫嗪",
+                    "每7-10天喷药一次",
+                    "全年防治，不能间断"
+                ]
+            },
+            {
+                id: 9,
+                name: "柑橘锈壁虱",
+                icon: "🟤",
+                category: "虫害",
+                description: "果实外观受害严重",
+                symptoms: "果皮变褐锈色，叶片灰白色，影响果实商品价值。",
+                causes: "锈壁虱刺吸果皮汁液。",
+                prevention: [
+                    "6-9月重点防治期",
+                    "保持果园适当湿度",
+                    "定期检查果实",
+                    "避免果园过于干燥"
+                ],
+                treatment: [
+                    "果实膨大期开始防治",
+                    "推荐药剂：阿维菌素、矿物油",
+                    "间隔15-20天喷药",
+                    "全面喷雾，果实要喷到"
+                ]
+            },
+            {
+                id: 10,
+                name: "柑橘天牛",
+                icon: "🪲",
+                category: "虫害",
+                description: "蛀干性害虫",
+                symptoms: "枝干出现虫孔，有虫粪排出，严重时枝条枯死。",
+                causes: "天牛幼虫蛀食枝干。",
+                prevention: [
+                    "成虫期人工捕杀",
+                    "树干涂白防止产卵",
+                    "定期检查树干",
+                    "加强树体管理，增强抗性"
+                ],
+                treatment: [
+                    "发现虫孔用铁丝钩杀幼虫",
+                    "虫孔注药后封口",
+                    "推荐药剂：敌敌畏、氯氰菊酯",
+                    "5-8月成虫期喷药防治"
+                ]
+            },
+            {
+                id: 11,
+                name: "柑橘灰霉病",
+                icon: "🌫️",
+                category: "病害",
+                description: "花果期病害",
+                symptoms: "花瓣、幼果出现水渍状病斑，长灰色霉层。",
+                causes: "由灰葡萄孢菌引起，低温高湿发病重。",
+                prevention: [
+                    "花期控制浇水",
+                    "及时清除病花病果",
+                    "注意通风透光",
+                    "花前喷保护性杀菌剂"
+                ],
+                treatment: [
+                    "花期重点防治",
+                    "推荐药剂：腐霉利、嘧霉胺",
+                    "开花前和谢花后各喷药一次",
+                    "注意交替用药"
+                ]
+            },
+            {
+                id: 12,
+                name: "柑橘粉虱",
+                icon: "❄️",
+                category: "虫害",
+                description: "温室大棚常见",
+                symptoms: "叶背有大量白色小虫，叶片萎蔫，煤烟病严重。",
+                causes: "粉虱繁殖快，刺吸叶片汁液。",
+                prevention: [
+                    "黄板诱杀成虫",
+                    "控制虫口基数",
+                    "注意果园卫生",
+                    "防虫网隔离"
+                ],
+                treatment: [
+                    "发现虫害及时防治",
+                    "推荐药剂：噻虫嗪、烯啶虫胺",
+                    "叶背要喷到位",
+                    "间隔7天连续防治"
+                ]
+            },
+            {
+                id: 13,
+                name: "柑橘脂点黄斑病",
+                icon: "🟡",
+                category: "病害",
+                description: "影响叶片光合",
+                symptoms: "叶片出现黄色半透明斑点，对光可见油点。",
+                causes: "由真菌引起，高温多雨季节发病。",
+                prevention: [
+                    "加强栽培管理",
+                    "雨季注意排水",
+                    "适当修剪，通风透光",
+                    "清除病叶"
+                ],
+                treatment: [
+                    "夏秋季重点防治",
+                    "推荐药剂：代森锰锌、百菌清",
+                    "10-15天喷药一次",
+                    "连续防治2-3次"
+                ]
+            },
+            {
+                id: 14,
+                name: "柑橘介壳虫",
+                icon: "🛡️",
+                category: "虫害",
+                description: "顽固性害虫",
+                symptoms: "枝叶上附着白色或褐色介壳，吸食汁液，引发煤烟病。",
+                causes: "介壳虫种类多，繁殖快。",
+                prevention: [
+                    "冬季清园，刮除老翘皮",
+                    "修剪病虫枝",
+                    "保护天敌瓢虫",
+                    "加强检查"
+                ],
+                treatment: [
+                    "若虫孵化盛期防治",
+                    "推荐药剂：噻嗪酮、毒死蜱",
+                    "加矿物油增效",
+                    "春秋两季重点防治"
+                ]
+            },
+            {
+                id: 15,
+                name: "柑橘青苔",
+                icon: "🟢",
+                category: "其他",
+                description: "枝干附生物",
+                symptoms: "枝干表面长满绿色或灰绿色青苔，影响树势。",
+                causes: "果园湿度大，通风不良。",
+                prevention: [
+                    "加强修剪，改善通风",
+                    "降低果园湿度",
+                    "树干涂白",
+                    "保持果园清洁"
+                ],
+                treatment: [
+                    "人工刮除青苔",
+                    "喷施石硫合剂或铜制剂",
+                    "改善栽培条件",
+                    "增强树势"
+                ]
+            },
+            {
+                id: 16,
+                name: "柑橘褐斑病",
+                icon: "🟤",
+                category: "病害",
+                description: "叶片病害",
+                symptoms: "叶片出现褐色不规则病斑，后期穿孔。",
+                causes: "由真菌引起，多雨季节发病。",
+                prevention: [
+                    "合理施肥，增强树势",
+                    "雨季排水",
+                    "清除病叶",
+                    "春秋梢期防治"
+                ],
+                treatment: [
+                    "新梢期喷药保护",
+                    "推荐药剂：苯醚甲环唑",
+                    "间隔10-15天",
+                    "连续防治2次"
+                ]
+            },
+            {
+                id: 17,
+                name: "柑橘线虫病",
+                icon: "🪱",
+                category: "病害",
+                description: "根部病害",
+                symptoms: "根系出现根结，树势衰弱，叶片黄化。",
+                causes: "根结线虫侵染根系。",
+                prevention: [
+                    "使用无病苗木",
+                    "土壤消毒",
+                    "轮作或间作",
+                    "避免连作"
+                ],
+                treatment: [
+                    "生长期灌根",
+                    "推荐药剂：阿维菌素、噻唑膦",
+                    "改良土壤",
+                    "增施有机肥"
+                ]
+            },
+            {
+                id: 18,
+                name: "柑橘煤烟病",
+                icon: "⚫",
+                category: "病害",
+                description: "继发性病害",
+                symptoms: "叶片果实覆盖黑色煤烟状物，影响光合和果实外观。",
+                causes: "蚜虫、粉虱、介壳虫分泌蜜露，真菌生长。",
+                prevention: [
+                    "防治蚜虫等刺吸式害虫",
+                    "改善通风条件",
+                    "降低果园湿度",
+                    "及时修剪"
+                ],
+                treatment: [
+                    "首先防治害虫",
+                    "喷施铜制剂或石硫合剂",
+                    "人工擦洗果实",
+                    "改善树冠通风"
+                ]
+            },
+            {
+                id: 19,
+                name: "柑橘裂果",
+                icon: "💥",
+                category: "生理病害",
+                description: "果实生理障碍",
+                symptoms: "果实表面开裂，影响商品价值。",
+                causes: "水分供应不均、缺硼、品种特性。",
+                prevention: [
+                    "均衡供水，避免干湿剧变",
+                    "补充硼肥和钙肥",
+                    "果实膨大期喷钙",
+                    "选用抗裂品种"
+                ],
+                treatment: [
+                    "改善水分管理",
+                    "叶面喷施硼钙肥",
+                    "果实套袋",
+                    "适当修剪调节负载"
+                ]
+            },
+            {
+                id: 20,
+                name: "柑橘日灼病",
+                icon: "☀️",
+                category: "生理病害",
+                description: "高温强光伤害",
+                symptoms: "果实向阳面出现褐色或黑色斑块，组织坏死。",
+                causes: "夏季高温强光直射果实。",
+                prevention: [
+                    "保留部分夏梢遮阴",
+                    "果实套袋",
+                    "树冠喷白色涂料",
+                    "保持树冠完整"
+                ],
+                treatment: [
+                    "及时摘除受害果",
+                    "喷施遮光剂",
+                    "加强水分管理",
+                    "补充钙肥提高抗性"
+                ]
+            },
+            {
+                id: 21,
+                name: "柑橘流胶病",
+                icon: "💧",
+                category: "病害",
+                description: "树干流胶",
+                symptoms: "树干或主枝流出黄褐色胶状物，树势衰弱。",
+                causes: "真菌侵染、机械损伤、冻害等。",
+                prevention: [
+                    "避免机械损伤",
+                    "防治天牛等蛀干害虫",
+                    "做好冬季防冻",
+                    "合理施肥增强树势"
+                ],
+                treatment: [
+                    "刮除病部至健康组织",
+                    "伤口涂抹杀菌剂",
+                    "推荐：多菌灵、甲基托布津",
+                    "加强树体管理"
+                ]
+            },
+            {
+                id: 22,
+                name: "柑橘蓟马",
+                icon: "🦗",
+                category: "虫害",
+                description: "花果期害虫",
+                symptoms: "花瓣、幼果表面有银白色条斑，果实畸形。",
+                causes: "蓟马刺吸嫩组织。",
+                prevention: [
+                    "蓝板诱杀",
+                    "花期重点防治",
+                    "清除杂草",
+                    "避免过度干旱"
+                ],
+                treatment: [
+                    "花期和幼果期防治",
+                    "推荐药剂：乙基多杀菌素",
+                    "傍晚或清晨喷药效果好",
+                    "间隔5-7天连续防治"
+                ]
+            },
+            {
+                id: 23,
+                name: "柑橘缺素症",
+                icon: "🔬",
+                category: "生理病害",
+                description: "营养元素缺乏",
+                symptoms: "缺氮叶片黄化，缺铁新叶黄化，缺镁老叶黄化，缺硼果小畸形。",
+                causes: "土壤营养不平衡或根系吸收障碍。",
+                prevention: [
+                    "平衡施肥",
+                    "改良酸性或碱性土壤",
+                    "增施有机肥",
+                    "定期土壤检测"
+                ],
+                treatment: [
+                    "根据症状对症施肥",
+                    "叶面喷施相应微量元素",
+                    "改善土壤理化性质",
+                    "促进根系生长"
+                ]
+            },
+            {
+                id: 24,
+                name: "柑橘根腐病",
+                icon: "🌱",
+                category: "病害",
+                description: "根系病害",
+                symptoms: "根系腐烂，叶片黄化脱落，树势衰弱，严重时死树。",
+                causes: "由疫霉菌等引起，积水果园易发。",
+                prevention: [
+                    "选择排水良好的地块",
+                    "避免积水",
+                    "使用抗病砧木",
+                    "合理灌溉"
+                ],
+                treatment: [
+                    "改善排水条件",
+                    "扒开根颈部土壤晾根",
+                    "灌根用药：甲霜恶霉灵",
+                    "增施有机肥改良土壤"
+                ]
+            },
+            {
+                id: 25,
+                name: "柑橘小实蝇",
+                icon: "🪰",
+                category: "虫害",
+                description: "果实蛀果害虫",
+                symptoms: "果实被蛀食，果肉腐烂，提前落果。",
+                causes: "成虫产卵于果实内，幼虫蛀食果肉。",
+                prevention: [
+                    "果实套袋保护",
+                    "诱捕器诱杀成虫",
+                    "清除落果和烂果",
+                    "成虫期喷药防治"
+                ],
+                treatment: [
+                    "成虫羽化期喷药",
+                    "推荐药剂：高效氯氰菊酯",
+                    "在诱捕器周围喷药",
+                    "及时清除虫果深埋或烧毁"
+                ]
+            },
+            {
+                id: 26,
+                name: "柑橘蚧壳虫",
+                icon: "🦪",
+                category: "虫害",
+                description: "多种蚧类统称",
+                symptoms: "枝叶果实上附着各种蚧壳，吸食汁液。",
+                causes: "多种蚧类害虫。",
+                prevention: [
+                    "冬季清园",
+                    "修剪虫枝",
+                    "保护天敌",
+                    "避免氮肥过量"
+                ],
+                treatment: [
+                    "若虫期防治效果好",
+                    "推荐药剂：矿物油+噻嗪酮",
+                    "冬季喷石硫合剂",
+                    "5月和9月重点防治"
+                ]
+            },
+            {
+                id: 27,
+                name: "柑橘病毒病",
+                icon: "🦠",
+                category: "病害",
+                description: "多种病毒病害",
+                symptoms: "叶片斑驳、畸形，果实异常，树势衰退。",
+                causes: "由多种病毒引起，嫁接、蚜虫传播。",
+                prevention: [
+                    "使用无病毒苗木",
+                    "严格检疫",
+                    "防治传播媒介",
+                    "病株隔离或清除"
+                ],
+                treatment: [
+                    "无有效治疗方法",
+                    "发现病株及时清除",
+                    "加强营养管理",
+                    "重点预防为主"
+                ]
+            },
+            {
+                id: 28,
+                name: "柑橘冻害",
+                icon: "❄️",
+                category: "生理病害",
+                description: "低温伤害",
+                symptoms: "叶片焦枯脱落，枝条干枯，严重时树体冻死。",
+                causes: "冬季低温或寒潮。",
+                prevention: [
+                    "选择抗寒品种和砧木",
+                    "培土保护根颈",
+                    "树干涂白或包裹",
+                    "熏烟或喷防冻液"
+                ],
+                treatment: [
+                    "冻后及时修剪枯枝",
+                    "不要过早修剪",
+                    "加强肥水管理恢复树势",
+                    "预防病虫害继发"
+                ]
+            },
+            {
+                id: 29,
+                name: "柑橘霜疫霉病",
+                icon: "🧊",
+                category: "病害",
+                description: "低温高湿病害",
+                symptoms: "果实褐腐，有白色霉层，叶片枯萎。",
+                causes: "由霜疫霉菌引起。",
+                prevention: [
+                    "果实离地栽培",
+                    "雨季及时排水",
+                    "采收前后喷药保护",
+                    "避免果实接触土壤"
+                ],
+                treatment: [
+                    "发病前预防性喷药",
+                    "推荐药剂：甲霜灵锰锌",
+                    "秋季和采收期重点防治",
+                    "病果及时清除"
+                ]
+            },
+            {
+                id: 30,
+                name: "柑橘叶斑病",
+                icon: "🍂",
+                category: "病害",
+                description: "多种叶斑病统称",
+                symptoms: "叶片出现各种形状和颜色的病斑。",
+                causes: "多种真菌或细菌引起。",
+                prevention: [
+                    "加强栽培管理",
+                    "合理密植通风",
+                    "清除病叶",
+                    "雨季排水"
+                ],
+                treatment: [
+                    "根据病原选择药剂",
+                    "真菌性用苯醚甲环唑",
+                    "细菌性用铜制剂",
+                    "10-15天喷药一次"
+                ]
+            },
+            {
+                id: 31,
+                name: "柑橘枯水病",
+                icon: "💀",
+                category: "生理病害",
+                description: "果实生理障碍",
+                symptoms: "果实瓤囊失水干枯，果汁减少，品质下降。",
+                causes: "氮肥过多、缺硼、干旱等。",
+                prevention: [
+                    "控制氮肥用量",
+                    "增施钾肥和硼肥",
+                    "均衡水分供应",
+                    "适时采收"
+                ],
+                treatment: [
+                    "改善肥水管理",
+                    "叶面喷施硼肥",
+                    "果实膨大期喷钙",
+                    "避免过度干旱"
+                ]
+            },
+            {
+                id: 32,
+                name: "柑橘吉丁虫",
+                icon: "🐞",
+                category: "虫害",
+                description: "枝干害虫",
+                symptoms: "枝干皮层下有虫道，枝条枯死。",
+                causes: "吉丁虫幼虫蛀食韧皮部。",
+                prevention: [
+                    "加强树体管理",
+                    "避免机械损伤",
+                    "成虫期捕杀",
+                    "树干涂白"
+                ],
+                treatment: [
+                    "发现虫枝及时剪除",
+                    "成虫期喷药防治",
+                    "推荐药剂：高效氯氰菊酯",
+                    "树干注药"
+                ]
+            },
+            {
+                id: 33,
+                name: "柑橘黑点病",
+                icon: "⚫",
+                category: "病害",
+                description: "果实外观病害",
+                symptoms: "果皮上出现黑色或褐色小点，影响外观。",
+                causes: "由真菌引起，高温多雨发病。",
+                prevention: [
+                    "清除病枝枯叶",
+                    "改善通风条件",
+                    "雨季加强防治",
+                    "果实套袋"
+                ],
+                treatment: [
+                    "幼果期开始防治",
+                    "推荐药剂：代森锰锌、百菌清",
+                    "10-15天喷药一次",
+                    "雨后及时补喷"
+                ]
+            },
+            {
+                id: 34,
+                name: "柑橘衰退病",
+                icon: "📉",
+                category: "病害",
+                description: "病毒性病害",
+                symptoms: "树势衰弱，叶片变小黄化，产量下降。",
+                causes: "由衰退病毒引起，蚜虫传播。",
+                prevention: [
+                    "使用脱毒苗木",
+                    "选用抗病砧穗组合",
+                    "防治蚜虫",
+                    "严格检疫"
+                ],
+                treatment: [
+                    "无有效治疗方法",
+                    "加强栽培管理",
+                    "病株更换砧木",
+                    "预防为主"
+                ]
+            },
+            {
+                id: 35,
+                name: "柑橘白粉病",
+                icon: "⚪",
+                category: "病害",
+                description: "叶片果实病害",
+                symptoms: "叶片、果实表面覆盖白色粉状物。",
+                causes: "由白粉菌引起，干旱条件下发病重。",
+                prevention: [
+                    "保持果园适当湿度",
+                    "合理修剪通风",
+                    "增施钾肥",
+                    "清除病叶"
+                ],
+                treatment: [
+                    "发病初期喷药",
+                    "推荐药剂：三唑酮、腈菌唑",
+                    "10天喷药一次",
+                    "连续防治2-3次"
+                ]
+            },
+            {
+                id: 36,
+                name: "柑橘绿霉病",
+                icon: "🟢",
+                category: "病害",
+                description: "采后病害",
+                symptoms: "果实腐烂，表面长绿色霉层。",
+                causes: "由青霉菌引起，伤口侵染。",
+                prevention: [
+                    "采收时避免损伤",
+                    "采后及时处理",
+                    "贮藏环境消毒",
+                    "控制温湿度"
+                ],
+                treatment: [
+                    "采后果实药剂处理",
+                    "推荐：咪鲜胺、抑霉唑",
+                    "及时挑出病果",
+                    "降低贮藏温度"
+                ]
+            },
+            {
+                id: 37,
+                name: "柑橘青霉病",
+                icon: "🔵",
+                category: "病害",
+                description: "采后病害",
+                symptoms: "果实腐烂，表面长青色霉层。",
+                causes: "由青霉菌引起，贮藏期发病。",
+                prevention: [
+                    "采收操作轻拿轻放",
+                    "及时预冷",
+                    "保持贮藏环境清洁",
+                    "控制温湿度"
+                ],
+                treatment: [
+                    "采后浸果处理",
+                    "推荐药剂：咪鲜胺",
+                    "贮藏温度5-8℃",
+                    "定期检查剔除病果"
+                ]
+            },
+            {
+                id: 38,
+                name: "柑橘酸腐病",
+                icon: "🍋",
+                category: "病害",
+                description: "采后病害",
+                symptoms: "果实软腐，有酸臭味。",
+                causes: "由细菌引起，高温高湿发病。",
+                prevention: [
+                    "采收时避免伤果",
+                    "及时预冷降温",
+                    "保持环境清洁干燥",
+                    "分级包装"
+                ],
+                treatment: [
+                    "发现病果立即剔除",
+                    "降低贮藏温度",
+                    "保持通风",
+                    "减少果实堆压"
+                ]
+            },
+            {
+                id: 39,
+                name: "柑橘蒂腐病",
+                icon: "🔴",
+                category: "病害",
+                description: "果实病害",
+                symptoms: "果蒂部腐烂，逐渐扩大至整个果实。",
+                causes: "由真菌引起，采收期侵染。",
+                prevention: [
+                    "采前喷药保护",
+                    "采收时留果柄",
+                    "避免雨天采收",
+                    "及时预冷"
+                ],
+                treatment: [
+                    "采前7天喷药",
+                    "推荐药剂：咪鲜胺",
+                    "采后浸果或喷药",
+                    "控制贮藏温湿度"
+                ]
+            },
+            {
+                id: 40,
+                name: "柑橘裂皮病",
+                icon: "📄",
+                category: "病害",
+                description: "病毒性病害",
+                symptoms: "树皮纵裂，树势衰弱，产量降低。",
+                causes: "由裂皮病毒引起。",
+                prevention: [
+                    "使用无病毒苗木",
+                    "避免混种敏感品种",
+                    "嫁接工具消毒",
+                    "选用耐病砧木"
+                ],
+                treatment: [
+                    "无有效治疗方法",
+                    "轻病株加强管理",
+                    "重病株更新",
+                    "以预防为主"
+                ]
+            },
+            {
+                id: 41,
+                name: "柑橘褐腐疫霉病",
+                icon: "🟤",
+                category: "病害",
+                description: "果实病害",
+                symptoms: "果实褐腐，有白色菌丝。",
+                causes: "由疫霉菌引起，多雨季节发病。",
+                prevention: [
+                    "果实离地栽培",
+                    "及时排水",
+                    "清除病果",
+                    "雨季喷药保护"
+                ],
+                treatment: [
+                    "发病前预防性用药",
+                    "推荐药剂：烯酰吗啉",
+                    "雨前雨后喷药",
+                    "间隔7-10天"
+                ]
+            },
+            {
+                id: 42,
+                name: "柑橘斑点落叶病",
+                icon: "🍃",
+                category: "病害",
+                description: "叶片病害",
+                symptoms: "叶片出现病斑后脱落，削弱树势。",
+                causes: "由真菌引起。",
+                prevention: [
+                    "清除落叶",
+                    "加强树体管理",
+                    "雨季排水",
+                    "合理施肥"
+                ],
+                treatment: [
+                    "新梢期喷药保护",
+                    "推荐药剂：代森锰锌",
+                    "10-15天一次",
+                    "连续防治2-3次"
+                ]
+            },
+            {
+                id: 43,
+                name: "柑橘象甲",
+                icon: "🪲",
+                category: "虫害",
+                description: "根部和果实害虫",
+                symptoms: "成虫啃食叶片和果实，幼虫蛀食根系。",
+                causes: "多种象甲类害虫。",
+                prevention: [
+                    "清除杂草",
+                    "地面覆盖",
+                    "成虫期捕杀",
+                    "树干涂粘虫胶"
+                ],
+                treatment: [
+                    "成虫期地面喷药",
+                    "推荐药剂：毒死蜱",
+                    "傍晚或夜间施药",
+                    "树冠和地面都要喷"
+                ]
+            },
+            {
+                id: 44,
+                name: "柑橘花蕾蛆",
+                icon: "🐛",
+                category: "虫害",
+                description: "花期害虫",
+                symptoms: "花蕾膨大不开放，内有白色蛆虫。",
+                causes: "花蕾蛆幼虫蛀食花蕾。",
+                prevention: [
+                    "花前土壤处理",
+                    "清除落蕾",
+                    "成虫期喷药",
+                    "花蕾期重点防治"
+                ],
+                treatment: [
+                    "花蕾露白期喷药",
+                    "推荐药剂：高效氯氰菊酯",
+                    "间隔5-7天",
+                    "连续防治2-3次"
+                ]
+            },
+            {
+                id: 45,
+                name: "柑橘卷叶蛾",
+                icon: "🦋",
+                category: "虫害",
+                description: "叶片害虫",
+                symptoms: "幼虫卷叶啃食，影响光合作用。",
+                causes: "多种卷叶蛾类幼虫。",
+                prevention: [
+                    "人工摘除卷叶",
+                    "保护天敌",
+                    "清除枯枝落叶",
+                    "灯光诱杀成虫"
+                ],
+                treatment: [
+                    "幼虫期喷药防治",
+                    "推荐药剂：氯氰菊酯",
+                    "可加入阿维菌素",
+                    "7-10天一次"
+                ]
+            },
+            {
+                id: 46,
+                name: "柑橘叶甲",
+                icon: "🐞",
+                category: "虫害",
+                description: "食叶害虫",
+                symptoms: "成虫和幼虫啃食叶片，严重时叶片被吃光。",
+                causes: "多种叶甲类害虫。",
+                prevention: [
+                    "人工捕杀成虫",
+                    "清除果园杂草",
+                    "保护天敌",
+                    "加强树体管理"
+                ],
+                treatment: [
+                    "发生期及时喷药",
+                    "推荐药剂：高效氯氰菊酯",
+                    "傍晚喷药效果好",
+                    "叶片正反面都要喷"
+                ]
+            },
+            {
+                id: 47,
+                name: "柑橘尺蠖",
+                icon: "🐛",
+                category: "虫害",
+                description: "食叶害虫",
+                symptoms: "幼虫啃食叶片，大发生时可吃光叶片。",
+                causes: "尺蠖类幼虫。",
+                prevention: [
+                    "冬季清园",
+                    "灯光诱杀成虫",
+                    "人工捕杀幼虫",
+                    "保护天敌"
+                ],
+                treatment: [
+                    "幼虫期喷药",
+                    "推荐药剂：氯氰菊酯、阿维菌素",
+                    "低龄幼虫期防治",
+                    "全树喷雾"
+                ]
+            },
+            {
+                id: 48,
+                name: "柑橘瘿螨",
+                icon: "🕷️",
+                category: "虫害",
+                description: "微小害虫",
+                symptoms: "叶片背面有银白色光泽，叶片畸形。",
+                causes: "瘿螨刺吸叶片。",
+                prevention: [
+                    "春梢萌发期防治",
+                    "保持果园湿度",
+                    "避免过度干旱",
+                    "定期检查"
+                ],
+                treatment: [
+                    "春梢期重点防治",
+                    "推荐药剂：阿维菌素、螺螨酯",
+                    "10-15天一次",
+                    "连续防治2次"
+                ]
+            },
+            {
+                id: 49,
+                name: "柑橘爆皮虫",
+                icon: "🪲",
+                category: "虫害",
+                description: "枝干害虫",
+                symptoms: "枝干树皮爆裂，有虫粪排出。",
+                causes: "爆皮虫幼虫蛀食韧皮部。",
+                prevention: [
+                    "加强树体管理",
+                    "避免树干损伤",
+                    "树干涂白",
+                    "成虫期捕杀"
+                ],
+                treatment: [
+                    "发现虫孔用药塞孔",
+                    "刮除虫道灌药",
+                    "推荐药剂：敌敌畏",
+                    "树干喷药防治成虫"
+                ]
+            },
+            {
+                id: 50,
+                name: "柑橘跗线螨",
+                icon: "🕷️",
+                category: "虫害",
+                description: "果实害虫",
+                symptoms: "果皮粗糙、褐色，失去光泽。",
+                causes: "跗线螨刺吸果皮。",
+                prevention: [
+                    "果实膨大期防治",
+                    "保持果园湿度",
+                    "定期检查果实",
+                    "避免过度干旱"
+                ],
+                treatment: [
+                    "幼果期开始防治",
+                    "推荐药剂：阿维菌素、矿物油",
+                    "15-20天一次",
+                    "全面喷雾"
+                ]
+            },
+            {
+                id: 51,
+                name: "柑橘桔小实蝇",
+                icon: "🪰",
+                category: "虫害",
+                description: "重要检疫害虫",
+                symptoms: "果实内有蛆虫，果肉腐烂流水。",
+                causes: "实蝇幼虫蛀食果肉。",
+                prevention: [
+                    "诱捕器监测和诱杀",
+                    "果实套袋",
+                    "清除落果",
+                    "诱饵喷洒"
+                ],
+                treatment: [
+                    "成虫期喷药",
+                    "推荐药剂：阿维菌素+糖醋液",
+                    "点状喷施诱杀",
+                    "及时处理虫果"
+                ]
+            },
+            {
+                id: 52,
+                name: "柑橘综合管理",
+                icon: "📋",
+                category: "管理",
+                description: "病虫害综合防治",
+                symptoms: "多种病虫害混合发生时的综合管理方案。",
+                causes: "多因素影响。",
+                prevention: [
+                    "建立健康果园生态系统",
+                    "合理施肥增强树势",
+                    "适时修剪改善通风",
+                    "清洁果园减少病虫基数"
+                ],
+                treatment: [
+                    "根据病虫发生情况制定防治方案",
+                    "优先使用生物防治",
+                    "化学防治注意农药混用禁忌",
+                    "轮换用药避免抗药性"
+                ]
+            }
+        ];
+
+        // 当前显示的数据
+        let currentData = [...knowledgeData];
+
+        // 渲染知识库列表
+        function renderList(data) {
+            const listContainer = document.getElementById('knowledgeList');
+            
+            if (data.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="no-result">
+                        <div class="no-result-icon">🔍</div>
+                        <div class="no-result-text">未找到相关病虫害</div>
+                    </div>
+                `;
+                return;
+            }
+
+            listContainer.innerHTML = data.map(item => `
+                <div class="knowledge-card" onclick="showDetail(${item.id})">
+                    <div class="card-left">
+                        <div class="card-icon">${item.icon}</div>
+                        <div class="card-content">
+                            <h3>${item.name}</h3>
+                            <p>${item.category} · ${item.description}</p>
+                        </div>
+                    </div>
+                    <div class="card-arrow">›</div>
+                </div>
+            `).join('');
+        }
+
+        // 搜索功能
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const keyword = e.target.value.toLowerCase().trim();
+            
+            if (keyword === '') {
+                currentData = [...knowledgeData];
+            } else {
+                currentData = knowledgeData.filter(item => 
+                    item.name.toLowerCase().includes(keyword) ||
+                    item.description.toLowerCase().includes(keyword) ||
+                    item.category.toLowerCase().includes(keyword)
+                );
+            }
+            
+            renderList(currentData);
+        });
+
+        // 显示详情页面
+        function showDetail(id) {
+            const item = knowledgeData.find(item => item.id === id);
+            if (!item) return;
+
+            document.getElementById('detailTitle').textContent = item.name;
+            
+            let detailHTML = `
+                <div class="detail-card">
+                    <div style="text-align: center; font-size: 50px; margin-bottom: 15px;">
+                        ${item.icon}
+                    </div>
+                    <h3>基本信息</h3>
+                    <p><strong>类别：</strong>${item.category}</p>
+                    <p><strong>简介：</strong>${item.description}</p>
+                </div>
+
+                <div class="detail-card">
+                    <h3>症状识别</h3>
+                    <p>${item.symptoms}</p>
+                </div>
+
+                <div class="detail-card">
+                    <h3>发生原因</h3>
+                    <p>${item.causes}</p>
+                </div>
+            `;
+
+            if (item.prevention) {
+                detailHTML += `
+                    <div class="detail-card">
+                        <h3>预防措施</h3>
+                        <ul>
+                            ${item.prevention.map(p => `<li>${p}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            if (item.treatment) {
+                detailHTML += `
+                    <div class="detail-card">
+                        <h3>防治方案</h3>
+                        <ul>
+                            ${item.treatment.map(t => `<li>${t}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            document.getElementById('detailContent').innerHTML = detailHTML;
+            document.getElementById('detailPage').classList.add('active');
+        }
+
+        // 关闭详情页面
+        function closDetail() {
+            document.getElementById('detailPage').classList.remove('active');
+        }
+
+        // 初始化渲染
+        renderList(currentData);
+    </script>
+</body>
+</html>
