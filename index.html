@@ -18,37 +18,9 @@
             overflow-x: hidden;
         }
 
-        /* 状态栏 */
-        .status-bar {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 8px 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            color: white;
-            font-size: 12px;
-            backdrop-filter: blur(10px);
-        }
-
-        .status-left {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .offline-badge {
-            background: rgba(255, 255, 255, 0.3);
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 11px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
         /* 头部 */
         .header {
-            padding: 20px 20px 15px;
+            padding: 30px 20px 15px;
             text-align: center;
         }
 
@@ -326,15 +298,6 @@
 <body>
     <!-- 主页面 -->
     <div id="mainPage">
-        <!-- 状态栏 -->
-        <div class="status-bar">
-            <div class="status-left">
-                <span>10:14</span>
-                <span class="offline-badge">🚫 离线模式</span>
-            </div>
-            <div>🔋 100%</div>
-        </div>
-
         <!-- 头部 -->
         <div class="header">
             <div class="logo-container">
@@ -1598,4 +1561,3 @@
     </script>
 </body>
 </html>
-
